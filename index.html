@@ -35,7 +35,6 @@ button { width:100%; padding:14px; border-radius:12px; border:none; background:#
 
   <button id="resumeBtn" onclick="loadAll()">全曲ソートを再開</button>
   <button onclick="clearSave()">セーブデータ削除</button>
-  <button onclick="debugJump()">【DEBUG】結果画面へ</button>
 </section>
 
 <section id="select15" class="hidden">
@@ -247,35 +246,6 @@ function loadAll(){
   firstAll=false;
   backModeAll.classList.add("hidden");
   show();
-}
-
-/* ===== DEBUG ===== */
-function debugJump(){
-  selected = songs.slice(0,15);
-  top15Arr = [...selected];
-  result15List.innerHTML="";
-  top15Arr.forEach(s=>{
-    const li=document.createElement("li");
-    li.textContent=s;
-    result15List.appendChild(li);
-  });
-
-  arr = [...songs];
-  allResultList.innerHTML="";
-  arr.forEach(s=>{
-    const li=document.createElement("li");
-    li.textContent=s;
-    allResultList.appendChild(li);
-  });
-
-  mode.classList.add("hidden");
-  select15.classList.add("hidden");
-  confirm15.classList.add("hidden");
-  rank15.classList.add("hidden");
-  allSort.classList.add("hidden");
-
-  result15.classList.remove("hidden");
-  allResult.classList.remove("hidden");
 }
 
 /* ===== X投稿 ===== */
