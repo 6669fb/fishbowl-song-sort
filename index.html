@@ -116,6 +116,18 @@ function backToMode(){ location.reload(); }
 function updateResumeBtn(){ resumeBtn.classList.toggle("hidden", !localStorage.getItem(SAVE_KEY)); }
 updateResumeBtn();
 
+/* ===== セーブデータ削除 ===== */
+function clearSave(){
+  if(!localStorage.getItem(SAVE_KEY)){
+    alert("削除するセーブデータがありません");
+    return;
+  }
+  if(!confirm("途中セーブデータを削除します。\nこの操作は取り消せません。よろしいですか？")) return;
+  localStorage.removeItem(SAVE_KEY);
+  updateResumeBtn();
+  alert("セーブデータを削除しました");
+}
+
 /* ===== 上位15 ===== */
 let selected=[], top15Arr=[], i15=0,j15=1,c15=0, first15=true;
 
@@ -265,3 +277,4 @@ function tweetAll(){
 </script>
 </body>
 </html>
+
