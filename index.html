@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>fishbowl 楽曲ソート</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  background: #f4f4f4;
+}
+header {
+  padding: 14px;
+  text-align: center;
+  font-weight: bold;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+main { padding: 16px; }
+
+h2 { font-size: 16px; margin-bottom: 8px; }
+.info { font-size: 13px; color: #555; margin-bottom: 10px; }
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.item {
+  background: #fff;
+  padding: 14px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #ddd;
+  cursor: pointer;
+}
+.item.selected {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: #111827;
+  color: #fff;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+textarea {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.hidden { display: none; }
+
+/* スクショ前提 */
+.result-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+}
+.result-box h3 {
+  text-align: center;
+  margin-bottom: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<header>fishbowl 楽曲ソート</header>
+
+<main>
+
+<!-- モード選択 -->
+<section id="mode">
+  <button onclick="startTop15()">上位15曲ソート</button>
+  <button onclick="startAll()">全曲ソートモード</button>
+</section>
+
+<!-- 上位15選択 -->
+<section id="select15" class="hidden">
+  <h2>上位15曲を選択</h2>
+  <div class="info">選択数：<span id="selCount">0</span> / 15</div>
+  <div class="list" id="selectList"></div>
+</section>
+
+<!-- 上位15順位 -->
+<section id="rank15" class="hidden">
+  <h2>順位を決定</h2>
+  <div class="info">今決めている順位：<b id="rankNow"></b> 位</div>
+  <div class="list" id="rankList"></div>
+</section>
+
+<!-- 上位15結果 -->
+<section id="result15" class="hidden">
+  <div class="result-box">
+    <h3>fishbowl 楽曲ソート結果（上位15）</h3>
+    <ol id="result15List"></ol>
+  </div>
+  <button onclick="tweetTop5()">上位5をX用に生成</button>
+  <textarea id="tweet15" rows="6"></textarea>
+</section>
+
+<!-- 全曲ソート -->
+<section id="allSort" class="hidden">
+  <h2>全曲ソート</h2>
+  <div class="info">進捗：<span id="prog">0</span>%</div>
+  <div class="item" id="a" onclick="pick(0)"></div>
+  <div class="item" id="b" onclick="pick(1)"></div>
+  <button onclick="draw()">引き分け</button>
+  <button onclick="undo()">戻る</button>
+</section>
+
+<!-- 全曲結果 -->
+<section id="allResult" class="hidden">
+  <div class="result-box">
+    <h3>fishbowl 楽曲ソート結果（全曲）</h3>
+    <ol id="allResultList"></ol>
+  </div>
+  <button onclick="tweetAll()">上位10をX用に生成</button>
+  <textarea id="tweetAllText" rows="7"></textarea>
+</section>
+
+</main>
+
+<script>
+const songs = [
+"生活","最百","舞踏","蒼霞","愛味","斜陽","熱波(new ver.)","しずおか35市町おぼえてる？",
+"ちょこっとLOVE","三島","四季","一雨","二兎","±零 yaya plus","±零 yaya minus",
+"九天","十色","七夕","八月","五五","六感","アイラブユー",
+"湖月","表裏","茶切 dope side","半分","茶切 cute side","完食","白線","熱波",
+"開幕","風花","尻尾","バレンタインデー","距離","観察","猛獣","雪景","夜桜","踊子"
+];
+
+/* ===== 上位15 ===== */
+let selected=[], pool=[], ranked=[], rank=1;
+
+function startTop15(){
+  mode.classList.add("hidden");
+  select15.classList.remove("hidden");
+  selectList.innerHTML="";
+  selected=[]; pool=[]; ranked=[]; rank=1;
+  selCount.textContent=0;
+
+  songs.forEach(s=>{
+    let d=document.createElement("div");
+    d.className="item";
+    d.textContent=s;
+    d.onclick=()=>{
+      if(selected.includes(s)){
+        selected=selected.filter(x=>x!==s);
+        d.classList.remove("selected");
+      } else if(selected.length<15){
+        selected.push(s);
+        d.classList.add("selected");
+      }
+      selCount.textContent=selected.length;
+      if(selected.length===15){
+        pool=[...selected];
+        select15.classList.add("hidden");
+        rank15.classList.remove("hidden");
+        updateRank();
+      }
+    };
+    selectList.appendChild(d);
+  });
+}
+
+function updateRank(){
+  rankNow.textContent=rank;
+  rankList.innerHTML="";
+  pool.forEach(s=>{
+    let d=document.createElement("div");
+    d.className="item";
+    d.textContent=s;
+    d.onclick=()=>{
+      ranked.push(s);
+      pool=pool.filter(x=>x!==s);
+      rank++;
+      pool.length?updateRank():showResult15();
+    };
+    rankList.appendChild(d);
+  });
+}
+
+function showResult15(){
+  rank15.classList.add("hidden");
+  result15.classList.remove("hidden");
+  result15List.innerHTML="";
+  ranked.forEach(s=>{
+    let li=document.createElement("li");
+    li.textContent=s;
+    result15List.appendChild(li);
+  });
+}
+
+function tweetTop5(){
+  let t="fishbowl 楽曲ソート 上位5\n";
+  ranked.slice(0,5).forEach((s,i)=>t+=`${i+1}位 ${s}\n`);
+  t+="#fishbowl";
+  tweet15.value=t;
+}
+
+/* ===== 全曲ソート ===== */
+let arr=[], stack=[], i=0,j=1,cmp=0;
+
+function startAll(){
+  mode.classList.add("hidden");
+  allSort.classList.remove("hidden");
+  arr=[...songs];
+  stack=[];
+  i=0;j=1;cmp=0;
+  show();
+}
+
+function show(){
+  a.textContent=arr[i];
+  b.textContent=arr[j];
+  prog.textContent=Math.floor(cmp/(songs.length*(songs.length-1)/2)*100);
+}
+
+function pick(w){
+  stack.push([...arr]);
+  if(w===0)[arr[i],arr[j]]=[arr[j],arr[i]];
+  next();
+}
+function draw(){ next(); }
+function undo(){
+  if(stack.length){
+    arr=stack.pop();
+    show();
+  }
+}
+function next(){
+  cmp++;
+  j++;
+  if(j>=arr.length){i++;j=i+1;}
+  if(i>=arr.length-1){
+    showAllResult();
+    return;
+  }
+  show();
+}
+function showAllResult(){
+  allSort.classList.add("hidden");
+  allResult.classList.remove("hidden");
+  allResultList.innerHTML="";
+  arr.forEach(s=>{
+    let li=document.createElement("li");
+    li.textContent=s;
+    allResultList.appendChild(li);
+  });
+}
+function tweetAll(){
+  let t="fishbowl 楽曲ソート 上位10\n";
+  arr.slice(0,10).forEach((s,i)=>t+=`${i+1}位 ${s}\n`);
+  t+="#fishbowl";
+  tweetAllText.value=t;
+}
+</script>
+
+</body>
+</html>
